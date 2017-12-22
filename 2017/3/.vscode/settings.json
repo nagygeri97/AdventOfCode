@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.c++": "cpp",
+        "ostream": "cpp",
+        "initializer_list": "cpp"
+    }
+}

@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.c++": "cpp",
+        "initializer_list": "cpp"
+    }
+}
