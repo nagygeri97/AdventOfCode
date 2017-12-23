@@ -1,0 +1,91 @@
+set b 84
+set c b
+jnz a 2
+jnz 1 5
+mul b 100
+sub b -100000
+set c b
+sub c -17000
+set f 1
+set d 2
+set e 2
+set g d
+mul g e
+sub g b
+jnz g 2
+set f 0
+sub e -1
+set g e
+sub g b
+jnz g -8
+sub d -1
+set g d
+sub g b
+jnz g -13
+jnz f 2
+sub h -1
+set g b
+sub g c
+jnz g 2
+jnz 1 3
+sub b -17
+jnz 1 -23
+
+
+b = 108400
+c = 125400
+
+init:
+f = 1
+d = 2
+init2:
+e = 2
+
+init3:
+if d*e == b then f = 0
+e = e + 1
+if e != b then goto init3;
+d = d + 1
+if d != b then goto init2;
+if f == 0 then h = h + 1
+
+if b != c then b = b + 17, goto init;
+
+
+
+b = 108400;
+c = 125400;
+do{
+    f = 1;
+    d = 2;
+    do{
+        e = 2;
+
+        do{
+            if(d*e == b) f = 0;
+
+            ++e;
+
+        }while(e != b);
+
+        ++d;
+
+    }while(d != b);
+
+    if(f == 0) ++h;
+
+    b += 17;
+}while(b != c);
+
+
+b = 108400;
+c = 125400;
+for(; b<c; b+=17){
+    f = false;
+    for(d = 2; d<b; ++d){
+        for(e = 2; e<b; ++e){
+            if(d*e = b) f = true;
+        }
+    }
+    if(f) ++h;
+}
