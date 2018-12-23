@@ -1,0 +1,10 @@
+{
+	"python.linting.pylintEnabled": false,
+	"files.associations": {
+		"algorithm": "cpp",
+		"ostream": "cpp",
+		"xutility": "cpp",
+		"iostream": "cpp",
+		"xlocale": "cpp"
+	}
+}
