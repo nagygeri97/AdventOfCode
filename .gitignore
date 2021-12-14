@@ -1,3 +1,8 @@
+# Files without extensions
+*
+!/**/
+!*.*
+
 # Prerequisites
 *.d
 
@@ -32,3 +37,6 @@
 *.app
 
 .vscode/*
+
+# Haskell
+*.hi
