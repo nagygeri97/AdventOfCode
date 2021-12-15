@@ -2,6 +2,8 @@ module Main where
 
 import Data.List
 import Data.Function
+import Data.Maybe
+import Data.Char
 import System.IO
 
 type ParsedLine = undefined

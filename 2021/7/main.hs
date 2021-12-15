@@ -43,7 +43,7 @@ getMinimal xs current smallers largers cost
         ns = smallers + lt
         nl = largers - lt
 
--- solve2 :: ParsedLine -> Int
+solve2 :: ParsedLine -> Int
 solve2 xs = minimum $ getMinimal2 (minimum xs) (maximum xs) xs
 
 getMinimal2 :: Int -> Int -> [Int] -> [Int]
