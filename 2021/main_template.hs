@@ -18,6 +18,13 @@ mainLoop xs = do
         else do input <- pure convert <*> getLine
                 mainLoop (xs ++ [input])
 
+splitBy :: Eq a => a -> [a] -> [[a]]
+splitBy delim list
+    | null last = [first]
+    | otherwise = first : splitBy delim (tail last)
+    where
+        (first,last) = break (==delim) list
+
 convert :: String -> ParsedLine
 convert = undefined
 
