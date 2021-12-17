@@ -4,7 +4,9 @@ import Data.List
 import Data.Function
 import Data.Maybe
 import Data.Char
+import Data.Array
 import System.IO
+import Control.Applicative
 
 type ParsedLine = undefined
 
