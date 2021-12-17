@@ -41,7 +41,6 @@ solveLine :: ParsedLine -> Int
 solveLine (patterns, output) = foldl (\acc x -> 10*acc + x) 0 $ map (\x -> fromJust $ elemIndex (sort x) numbers) output
     where
         sorted = sortBy (compare `on` length) patterns
-        
 
         one = sorted !! 0
         four = sorted !! 2

@@ -30,8 +30,8 @@ splitBy delim list
 convert :: String -> ParsedLine
 convert = undefined
 
-solve1 :: [ParsedLine] -> Integer
+solve1 :: [ParsedLine] -> Int
 solve1 = undefined
 
-solve2 :: [ParsedLine] -> Integer
+solve2 :: [ParsedLine] -> Int
 solve2 = undefined
