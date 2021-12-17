@@ -2,9 +2,16 @@ module Main where
 
 import Data.List
 import Data.Function
+import Data.Maybe
+import Data.Char
+import Data.Array
 import System.IO
+import Control.Applicative
 
 type ParsedLine = ((Int, Int), (Int, Int))
+
+type ArrayInt a = Array Int a
+type Arr = ArrayInt (ArrayInt Int)
 
 main :: IO ()
 main = mainLoop []
@@ -24,44 +31,26 @@ convert s = ((x1,y1), (x2,y2))
         [[x1,y1],[x2,y2]] = (map . map) read . map words $ [first, second]
         [first,_,second] = (map . map) (\x -> if x == ',' then ' ' else x) . words $ s
 
-size :: Int
-size = 1000
+emptyBoard :: [ParsedLine] -> Arr
+emptyBoard input = array (0,size) [(n,array (0,size) [(i,0) | i<-[0..size]]) | n<-[0..size]]
+    where 
+        size = maximum $ concat $ map (\((x,y),(z,w)) -> [x,y,z,w]) input 
 
-emptyBoard :: [[Int]]
-emptyBoard = replicate size . replicate size $ 0
-
-applyLineOnBoard :: ParsedLine -> [[Int]] -> [[Int]]
+applyLineOnBoard :: ParsedLine -> Arr -> Arr
 applyLineOnBoard ((x1,y1), (x2,y2)) board
- | x1 == x2 = incrementAtBoard board x1 (min y1 y2, max y1 y2)
- | y1 == y2 = transpose $ incrementAtBoard (transpose board) y1 (min x1 x2, max x1 x2)
+ | x1 == x2 = board // [(x1, board ! x1 // [(y, (board ! x1 ! y) + 1) | y<-[min y1 y2..max y1 y2]])]
+ | y1 == y2 = board // [(x, board ! x // [(y1, (board ! x ! y1) + 1)]) | x<-[min x1 x2..max x1 x2]]
  | otherwise = board
 
-incrementAtBoard :: [[Int]] -> Int -> (Int, Int) -> [[Int]]
-incrementAtBoard [] _ _ = []
-incrementAtBoard (r:rs) 0 (y1,y2) = map (\(a,b) -> if y1 <= a && a <= y2 then b + 1 else b) (zip [0..] r) : rs
-incrementAtBoard (r:rs) x1 (y1,y2) = r : incrementAtBoard rs (x1-1) (y1,y2)
-
 solve1 :: [ParsedLine] -> Int
-solve1 = length . filter (>1) . concat . foldr applyLineOnBoard emptyBoard
+solve1 input = length . filter (>1) . concat . map elems . elems . foldr applyLineOnBoard (emptyBoard input) $ input
 
 
-applyLineOnBoard2 :: ParsedLine -> [[Int]] -> [[Int]]
+applyLineOnBoard2 :: ParsedLine -> Arr -> Arr
 applyLineOnBoard2 coords@((x1,y1), (x2,y2)) board
- | x1 == x2 = incrementAtBoard board x1 (min y1 y2, max y1 y2)
- | y1 == y2 = transpose $ incrementAtBoard (transpose board) y1 (min x1 x2, max x1 x2)
- | otherwise = incrementAtBoard2 board (x1,y1) (x2,y2) --  foldr (\(x,y) board -> incrementAtBoard board x (y,y)) board (coordsBetween coords)
-
-incrementAtBoard2 :: [[Int]] -> (Int, Int) -> (Int, Int) -> [[Int]]
-incrementAtBoard2 (r:rs) (0,y1) (0,y2) = (t ++ (d+1):ds) : rs
-    where
-        (t,(d:ds)) = splitAt y1 r
-incrementAtBoard2 (r:rs) (0,y1) (x2,y2) = (t ++ ((d+1):ds)) : incrementAtBoard2 rs (0,y1+(signum (y2 - y1))) (x2-1,y2)
-    where 
-        (t,(d:ds)) = splitAt y1 r
-incrementAtBoard2 (r:rs) (x1,y1) (0,y2) = (t ++ ((d+1):ds)) : incrementAtBoard2 rs (x1-1,y1) (0,y2+(signum (y1 - y2)))
-    where
-        (t,(d:ds)) = splitAt y2 r
-incrementAtBoard2 (r:rs) (x1,y1) (x2,y2) = r : incrementAtBoard2 rs (x1-1,y1) (x2-1,y2)
+ | x1 == x2 = board // [(x1, board ! x1 // [(y, (board ! x1 ! y) + 1) | y<-[min y1 y2..max y1 y2]])]
+ | y1 == y2 = board // [(x, board ! x // [(y1, (board ! x ! y1) + 1)]) | x<-[min x1 x2..max x1 x2]]
+ | otherwise = board // [(x, board ! x // [(y, (board ! x ! y) + 1)]) | (x,y)<-coordsBetween coords]
 
 coordsBetween :: ParsedLine -> [(Int, Int)]
 coordsBetween ((x1,y1), (x2,y2))
@@ -71,4 +60,4 @@ coordsBetween ((x1,y1), (x2,y2))
  | x1 > x2 && y1 > y2 = zip [x1,(x1-1)..x2] [y1,(y1-1)..y2]
 
 solve2 :: [ParsedLine] -> Int
-solve2 = length . filter (>1) . concat . foldr applyLineOnBoard2 emptyBoard
+solve2 input = length . filter (>1) . concat . map elems . elems . foldr applyLineOnBoard2 (emptyBoard input) $ input
