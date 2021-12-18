@@ -7,6 +7,7 @@ import Data.Char
 import Data.Array
 import System.IO
 import Control.Applicative
+import qualified Data.Set as S
 
 type ParsedLine = String
 
@@ -35,21 +36,21 @@ convert = id
 
 data Axis = X | Y deriving (Eq, Show)
 
-parseInput :: [ParsedLine] -> ([(Int,Int)], [(Axis, Int)])
+parseInput :: [ParsedLine] -> (S.Set (Int,Int), [(Axis, Int)])
 parseInput lines = (parsedPts, parsedFolds)
     where
         [points, folds] = splitBy [] lines
-        parsedPts = map (fromList . map read . splitBy ',') points
+        parsedPts = S.fromList $ map (fromList . map read . splitBy ',') points
         parsedFolds = map ((\(x,y) -> (if x == "x" then X else Y, read y)) . fromList . splitBy '=' . (!!2) . words) folds
         fromList [a,b] = (a,b)
 
 solve1 :: [ParsedLine] -> Int
-solve1 input = length $ performFold pts (head folds)
+solve1 input = S.size $ performFold pts (head folds)
     where
         (pts, folds) = parseInput input
 
-performFold :: [(Int, Int)] -> (Axis, Int) -> [(Int, Int)]
-performFold pts (axis, line) = nub $ map (\pt -> constructFun (let x = axisFun pt in if x > line then line - (x - line) else x) (otherFun pt)) pts
+performFold :: S.Set (Int, Int) -> (Axis, Int) -> S.Set (Int, Int)
+performFold pts (axis, line) = S.map (\pt -> constructFun (let x = axisFun pt in if x > line then line - (x - line) else x) (otherFun pt)) pts
     where
         axisFun = if axis == X then fst else snd
         otherFun = if axis == X then snd else fst
@@ -61,12 +62,11 @@ solve2 input = showListCoords $ foldl performFold pts folds
     where
         (pts, folds) = parseInput input
 
-showListCoords :: [(Int, Int)] -> IO ()
-showListCoords pts = putStrLn . unlines . transpose . foldr (replaceAtMatrix '█') empty $ pts
+showListCoords :: S.Set (Int, Int) -> IO ()
+showListCoords pts = putStrLn . unlines . transpose . S.foldr (replaceAtMatrix '█') empty $ pts
     where
-        sortedPts = sort pts
-        maxx = maximum $ map fst pts
-        maxy = maximum $ map snd pts
+        maxx = S.findMax $ S.map fst pts
+        maxy = S.findMax $ S.map snd pts
         empty = replicate (maxx + 1) (replicate (maxy + 1) ' ')
 
 replaceAtMatrix :: a -> (Int, Int) -> [[a]] -> [[a]]
