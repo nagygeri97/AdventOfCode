@@ -1,0 +1,3 @@
+Install packages from Hackage:
+
+cabal install --lib --package-env . PACKAGE

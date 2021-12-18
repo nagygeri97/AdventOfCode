@@ -8,7 +8,7 @@ import Data.Array
 import System.IO
 import Control.Applicative
 
-type ParsedLine = undefined
+type ParsedLine = String
 
 main :: IO ()
 main = mainLoop []
