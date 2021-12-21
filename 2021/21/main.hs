@@ -8,6 +8,7 @@ import Data.Array
 import System.IO
 import Control.Applicative
 import Control.Monad.State
+import qualified Data.Map as M
 
 type ParsedLine = Int
 
@@ -123,27 +124,28 @@ solve1 [x,y] = evalState game startState
 solve2 :: [ParsedLine] -> Int
 solve2 [x,y] = max rx ry
     where
-        (rx, ry) = outcomes (x-1,y-1) (0,0) 0
+        (_, (rx, ry)) = outcomes (x-1,y-1) (0,0) 0 M.empty
 
-outcomes :: (Pos, Pos) -> (Score, Score) -> Turn -> (Int, Int)
-outcomes (x,y) (sx,sy) turn
-    | sx >= 21 = (1,0)
-    | sy >= 21 = (0,1)
-    | otherwise = foldr1 (\(x,y) (accx, accy) -> (accx + x, accy + y)) results
+type Cache = M.Map (Pos, Pos, Score, Score, Bool) (Int, Int)
+outcomes :: (Pos, Pos) -> (Score, Score) -> Turn -> Cache -> (Cache, (Int, Int))
+outcomes (x,y) (sx,sy) turn cache
+    | sx >= 21 = (cache, (1,0))
+    | sy >= 21 = (cache, (0,1))
+    | M.member (x,y,sx,sy,odd turn) cache = (cache, cache M.! (x,y,sx,sy,odd turn))
+    | otherwise = foldr scoreStep (cache, (0,0)) multis
     where
         playerNum = fromEnum (odd turn) + 1
-        results = map scoreStep multis
 
-        scoreStep :: (Int, Int) -> (Int, Int)
-        scoreStep (roll, mult) = (mult * rx, mult * ry)
-            where 
-                newPoss
+        scoreStep :: (Int, Int) -> (Cache, (Int, Int)) -> (Cache, (Int, Int))
+        scoreStep (roll, mult) (cch, (accx, accy)) = (M.insert (nx, ny, nsx, nsy,even turn) (rx,ry) newCache, (accx + mult * rx, accy + mult * ry))
+            where
+                newPoss@(nx, ny)
                     | playerNum == 1 = ((x + roll) `mod` 10, y)
                     | playerNum == 2 = (x, (y + roll) `mod` 10)
-                newScores
+                newScores@(nsx, nsy)
                     | playerNum == 1 = (sx + fst newPoss + 1, sy)
                     | playerNum == 2 = (sx, sy + snd newPoss + 1)
-                (rx, ry) = outcomes newPoss newScores (turn + 1)
+                (newCache, (rx, ry)) = outcomes newPoss newScores (turn + 1) cch
 
 
 multis :: [(Int, Int)]
