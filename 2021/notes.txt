@@ -1,3 +1,7 @@
 Install packages from Hackage:
 
+Windows:
 cabal install --lib --package-env . PACKAGE
+
+Ubuntu:
+cabal install PACKAGE
