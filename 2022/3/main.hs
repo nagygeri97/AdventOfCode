@@ -8,9 +8,9 @@ import Data.Array
 import System.IO
 import Control.Applicative
 
-type ParsedLine = String
+type ParsedLine = (String, String)
 
-type ParsedLine2 = ParsedLine
+type ParsedLine2 = String
 
 main :: IO ()
 main = mainLoop [] []
@@ -32,13 +32,22 @@ splitBy delim list
         (first,last) = break (==delim) list
 
 convert :: String -> ParsedLine
-convert = undefined
+convert xs = splitAt (length xs `div` 2) xs
 
 convert2 :: String -> ParsedLine2
-convert2 = convert
+convert2 = id
+
+score :: Char -> Int
+score c
+ | 'a' <= c && c <= 'z' = ord c - ord 'a' + 1
+ | 'A' <= c && c <= 'Z' = ord c - ord 'A' + 27
 
 solve1 :: [ParsedLine] -> Int
-solve1 = undefined
+solve1 = sum . map (score . head . (uncurry intersect))
+
+commons :: [ParsedLine2] -> [Char]
+commons [] = []
+commons (x:y:z:xs) = head (intersect (intersect x y) z) : commons xs
 
 solve2 :: [ParsedLine2] -> Int
-solve2 = undefined
+solve2 = sum . map score . commons
