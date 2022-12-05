@@ -19,8 +19,8 @@ def main():
 		run_command_template = run_command_template.format(prefix='./', suffix='')
 
 	for dir in dirs:
-		ghc_command = ghc_command_template.format(file=dir+'/main.hs')
-		run_command = run_command_template.format(file=dir+'/main', input=dir+'/'+input_file)
+		ghc_command = ghc_command_template.format(file=dir+'/main.hs').replace('/', '\\' if isWin else '/')
+		run_command = run_command_template.format(file=dir+'/main', input=dir+'/'+input_file).replace('/', '\\' if isWin else '/')
 		print('Day '+dir+':')
 		os.popen(ghc_command).read()
 		os.system(run_command)
