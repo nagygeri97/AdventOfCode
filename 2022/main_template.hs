@@ -6,6 +6,8 @@ import Data.Maybe
 import Data.Char
 import Data.Array
 import System.IO
+import Control.Monad.State
+import Control.Monad
 import Control.Applicative
 
 type ParsedLine = String
