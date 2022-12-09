@@ -12,7 +12,7 @@ import Control.Monad
 import qualified Data.Set as Set
 
 data Direction = U | R | D | L deriving (Eq, Show)
-type Move = (Direction, Int) 
+type Move = (Direction, Int)
 
 type ParsedLine = Move
 
@@ -43,6 +43,7 @@ convert line
     | direction == "R" = (R, amount)
     | direction == "D" = (D, amount)
     | direction == "L" = (L, amount)
+    | otherwise = error "Invalid direction"
     where
         [direction, amountStr] = splitBy ' ' line
         amount = read amountStr
@@ -59,7 +60,7 @@ performMoves (m:ms) = do
     newMove <- performMove m
     if isNothing newMove
         then performMoves ms
-        else performMoves ((fromJust newMove):ms)
+        else performMoves (fromJust newMove:ms)
 
 performMove :: Move -> State RopeState (Maybe Move)
 performMove (dir, amt) = do
@@ -78,9 +79,10 @@ moveHead D (hx, hy) = (hx - 1, hy)
 moveHead L (hx, hy) = (hx, hy - 1)
 
 moveAll :: [Position] -> Direction -> [Position]
-moveAll (h:rope) dir = newH : moveTails newH rope 
+moveAll (h:rope) dir = newH : moveTails newH rope
     where
         newH = moveHead dir h
+moveAll _ _ = error "Move without head"
 
 moveTails :: Position -> [Position] -> [Position]
 moveTails _ [] = []

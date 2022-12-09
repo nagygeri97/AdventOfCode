@@ -55,20 +55,22 @@ splitBy delim list
         (first,last) = break (==delim) list
 
 convert :: String -> ParsedLine
-convert line 
+convert line
     | firstPart == "$" = Command $ parseCommand (tail splitLine)
     | otherwise = Output $ parseOutput splitLine
     where
-        splitLine = splitBy ' ' line 
+        splitLine = splitBy ' ' line
         firstPart = head splitLine
 
 parseCommand :: [String] -> Command
 parseCommand ["ls"] = Ls
 parseCommand ["cd", destination] = Cd destination
+parseCommand _ = error "Invalid command"
 
 parseOutput :: [String] -> Output
 parseOutput ["dir", name] = DirectoryOutput name
 parseOutput [size, name] = FileOutput (read size) name
+parseOutput _ = error "Invalid output"
 
 type DirectoryStructure = Map.Map [String] Directory
 
@@ -107,7 +109,7 @@ updateStateWithCdBack (structure, []) = (structure, [])
 updateStateWithCdBack (structure, currentDir) = (structure, tail currentDir)
 
 updateStateWithRoot :: BuildingState -> BuildingState
-updateStateWithRoot (structure, _) 
+updateStateWithRoot (structure, _)
     | Map.member [] structure = (structure, [])
     | otherwise = (Map.insert [] (Directory (-1) [] [] Nothing) structure, [])
 
@@ -115,14 +117,14 @@ updateStateWithDirectory :: String -> BuildingState -> BuildingState
 updateStateWithDirectory newDir state@(structure, currentDir)
     | Map.member newCurrentDir structure = state
     | otherwise = (Map.insert newCurrentDir (Directory (-1) [] [] (Just currentDir)) structure, newCurrentDir)
-    where 
+    where
         newCurrentDir = newDir:currentDir
 
 addFileToState :: Int -> String -> BuildingState -> BuildingState
 addFileToState size name (structure, currentDir) = (newStructure, currentDir)
     where
         Just (Directory dirSize files children parent) = Map.lookup currentDir structure
-        newDir = Directory dirSize ((File size name):files) children parent
+        newDir = Directory dirSize (File size name:files) children parent
         newStructure = Map.insert currentDir newDir structure
 
 addChildToState :: String -> BuildingState -> BuildingState
@@ -135,14 +137,11 @@ addChildToState name (structure, currentDir) = (newStructure, currentDir)
 calculateSizes :: State BuildingState DirectoryStructure
 calculateSizes = do
     (structure, currentDir) <- get
-    let Just (Directory dirSize files children parent) = Map.lookup currentDir structure 
-    if dirSize == (-1) 
-        then do
-            foldM calculateChildSizes structure children
+    let Just (Directory dirSize files children parent) = Map.lookup currentDir structure
+    when (dirSize == (-1)) $ do
+            foldM_ calculateChildSizes structure children
             modify (\(s, _) -> (s, currentDir))
             modify updateStateWithSize
-            return ()
-        else 
             return ()
     gets fst
 
@@ -157,7 +156,7 @@ updateStateWithSize (structure, currentDir) = (newStructure, currentDir)
         Just (Directory dirSize files children parent) = Map.lookup currentDir structure
         childrenSizes = sum $ map (\child -> getSize $ fromJust $ Map.lookup child structure) children
         fileSizes = sum $ map (\(File size _) -> size) files
-        newDir = Directory (childrenSizes + fileSizes) files children parent 
+        newDir = Directory (childrenSizes + fileSizes) files children parent
         newStructure = Map.insert currentDir newDir structure
 
 getSize :: Directory -> Int
@@ -174,7 +173,7 @@ solve1 = sum . filter (<=100000) . sizes
 
 solve2 :: [ParsedLine2] -> Int
 solve2 lines = minimum . filter (>=neededToDelete) $ allSizes
-    where 
+    where
         allSizes = sizes lines
         unused = 70000000 - maximum allSizes
         neededToDelete = 30000000 - unused

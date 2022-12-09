@@ -19,7 +19,7 @@ mainLoop xs = do
     if done
         then do putStrLn . ("Part One: " ++) . show . solve1 $ xs
                 putStrLn . ("Part Two: " ++) . show . solve2 $ xs
-        else do input <- pure convert <*> getLine
+        else do input <- convert <$> getLine
                 mainLoop (xs ++ [input])
 
 splitBy :: Eq a => a -> [a] -> [[a]]
@@ -33,7 +33,7 @@ convert :: String -> ParsedLine
 convert = id
 
 processInput :: [ParsedLine] -> [[Int]]
-processInput = (map . map $ read) . (splitBy [])
+processInput = (map . map $ read) . splitBy []
 
 solve1 :: [ParsedLine] -> Int
 solve1 = maximum . map sum . processInput

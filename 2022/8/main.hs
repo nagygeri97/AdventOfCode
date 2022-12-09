@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Main where
 
 import Data.List
@@ -32,7 +33,7 @@ splitBy delim list
         (first,last) = break (==delim) list
 
 convert :: String -> ParsedLine
-convert = map ((\x -> (x, False)) . read . (:[]))
+convert = map ((, False) . read . (:[]))
 
 calculateVisibles :: ParsedLine -> ParsedLine
 calculateVisibles = tail . map fst . scanl (\(_, m) (h, v) -> ((h, h > m || v), max h m)) ((0, False), -1)
@@ -41,11 +42,12 @@ calculateRowsVisible :: [ParsedLine] -> [ParsedLine]
 calculateRowsVisible = map (calculateVisibles . reverse . calculateVisibles)
 
 convert2 :: String -> ParsedLine2
-convert2 = map ((\x -> (x, 1)) . read . (:[]))
+convert2 = map ((, 1) . read . (:[]))
 
 calculateVisiblesRight :: ParsedLine2 -> Int
 calculateVisiblesRight [_] = 0
 calculateVisiblesRight ((h, _):xs) = 1 + (length . takeWhile ((<h) . fst) $ init xs)
+calculateVisiblesRight _ = error "Empty line"
 
 calculateScoresRight :: ParsedLine2 -> ParsedLine2
 calculateScoresRight [] = []

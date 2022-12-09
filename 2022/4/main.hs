@@ -34,7 +34,7 @@ splitBy delim list
 convert :: String -> ParsedLine
 convert xs = ((x,y), (w,z))
  where
- [[x,y], [w,z]] =  map (map read . splitBy '-') $splitBy ',' xs
+ [[x,y], [w,z]] =  map (map read . splitBy '-') $ splitBy ',' xs
 
 convert2 :: String -> ParsedLine2
 convert2 = convert

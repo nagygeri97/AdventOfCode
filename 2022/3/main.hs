@@ -41,13 +41,15 @@ score :: Char -> Int
 score c
  | 'a' <= c && c <= 'z' = ord c - ord 'a' + 1
  | 'A' <= c && c <= 'Z' = ord c - ord 'A' + 27
+ | otherwise = error "Invalid Char"
 
 solve1 :: [ParsedLine] -> Int
-solve1 = sum . map (score . head . (uncurry intersect))
+solve1 = sum . map (score . head . uncurry intersect)
 
 commons :: [ParsedLine2] -> [Char]
 commons [] = []
-commons (x:y:z:xs) = head (intersect (intersect x y) z) : commons xs
+commons (x:y:z:xs) = head ((x `intersect` y) `intersect` z) : commons xs
+commons _ = error "Invalid length of input"
 
 solve2 :: [ParsedLine2] -> Int
 solve2 = sum . map score . commons

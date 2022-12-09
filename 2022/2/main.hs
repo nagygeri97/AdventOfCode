@@ -23,7 +23,7 @@ mainLoop xs = do
     if done
         then do putStrLn . ("Part One: " ++) . show . solve1 $ xs
                 putStrLn . ("Part Two: " ++) . show . solve2 $ xs
-        else do input <- pure convert <*> getLine
+        else do input <- convert <$> getLine
                 mainLoop (xs ++ [input])
 
 splitBy :: Eq a => a -> [a] -> [[a]]
@@ -37,11 +37,13 @@ parseFst :: String -> RPS
 parseFst "A" = Rock
 parseFst "B" = Paper
 parseFst "C" = Scissors
+parseFst _ = error "Invalid input"
 
 parseSnd :: String -> RPS
 parseSnd "X" = Rock
 parseSnd "Y" = Paper
 parseSnd "Z" = Scissors
+parseSnd _ = error "Invalid input"
 
 convert :: String -> ParsedLine
 convert = splitBy ' '
@@ -64,14 +66,17 @@ moveScore Scissors = 3
 
 convertToFirst :: [String] -> (RPS, RPS)
 convertToFirst [fst, snd] = (parseFst fst, parseSnd snd)
+convertToFirst _ = error "Invalid line"
 
 convertToSecond :: [String] -> (RPS, Goal)
 convertToSecond [fst, snd] = (parseFst fst, parseGoal snd)
+convertToSecond _ = error "Invalid line"
 
 parseGoal :: String -> Goal
 parseGoal "X" = Lose
 parseGoal "Y" = Draw
 parseGoal "Z" = Win
+parseGoal _ = error "Invalid input"
 
 getSymbolForOutcome :: (RPS, Goal) -> RPS
 getSymbolForOutcome (x, Draw) = x

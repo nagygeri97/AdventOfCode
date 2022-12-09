@@ -88,7 +88,7 @@ everyThird (_:x:_:xs) = x : everyThird end
     end
      | null xs = []
      | otherwise = tail xs
-everyThird [] = []
+everyThird _ = []
 
 solve1 :: [ParsedLine] -> String
 solve1 input = map head $ elems $ foldl (flip (performMove moveWithFlip)) stacks moves
