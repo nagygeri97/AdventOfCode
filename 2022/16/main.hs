@@ -117,5 +117,109 @@ solve1 lines = (*(-1)) . minimum . map dist . concat . map (\(a,_,_) -> Map.elem
         firstLevel = Map.update (\(Node l n r d o) -> Just $ Node l n r 0 o) "AA" $ gLevel
         firstLevelInfo = (firstLevel, 0, Set.empty)
 
+data Graph2Node = G2N {
+    node1 :: Node,
+    node2 :: Node,
+    distance :: Int,
+    ops :: Set.Set Label
+} 
+type GraphLevel2 = Map.Map (Label, Label) Graph2Node
+
+crossProduct :: [a] -> [a] -> [(a, a)]
+crossProduct xs ys = liftA2 (,) xs ys
+
+convertToGraphLevel2 :: [(Node, Node)] -> GraphLevel2 -> GraphLevel2
+convertToGraphLevel2 [] g = g 
+convertToGraphLevel2 ((n1, n2):ns) g = convertToGraphLevel2 ns (Map.insert (label n1, label n2) (G2N n1 n2 1 Set.empty) g)
+
+nextLevel2 :: GraphLevel2 -> (GraphLevel2, Int, Set.Set Label) -> [(GraphLevel2, Int, Set.Set Label)]
+nextLevel2 originalG (g, clock, openLabs)  = [(newGWithoutOpen, clock + 1, openLabs)] ++ openGsFirst ++ openGsSecond ++ twoOpenGs
+    where
+        levelElems :: [Graph2Node]
+        levelElems = Map.elems g
+
+        availableNodes :: [Graph2Node]
+        availableNodes = filter ((<=0) . distance) levelElems
+
+        availableNeighbors :: [((Label,Label), Int, Set.Set Label)]
+        availableNeighbors = concat $ map (\(G2N n1 n2 d ops) -> map (\l -> (l, d, ops)) (crossProduct (Set.toList $ neighbors n1) (Set.toList $ neighbors n2))) availableNodes
+
+        getAllNeighborsWithData :: Map.Map (Label, Label) (Int, Set.Set Label) -> [((Label, Label), Int, Set.Set Label)] -> Map.Map (Label, Label) (Int, Set.Set Label)
+        getAllNeighborsWithData m [] = m
+        getAllNeighborsWithData m ((l, d, o):ns) = getAllNeighborsWithData (Map.insertWith min l (d, o) m) ns
+
+        allNeighborsWithData :: Map.Map (Label, Label) (Int, Set.Set Label)
+        allNeighborsWithData = getAllNeighborsWithData Map.empty availableNeighbors
+
+        newGWithoutOpen :: GraphLevel2
+        newGWithoutOpen = foldr (\(lab, (dist, opens)) m -> Map.update (\(G2N n1 n2 _ _) -> Just $ G2N n1 n2 dist opens) lab m) originalG (Map.toList allNeighborsWithData)
+
+        closedAvailableNodesFirst :: [Graph2Node]
+        closedAvailableNodesFirst = filter (\(G2N n _ _ ops) -> (not $ Set.member (label n) ops) && rate n > 0) availableNodes
+
+        closedAvailableNodesSecond :: [Graph2Node]
+        closedAvailableNodesSecond = filter (\(G2N _ n _ ops) -> (not $ Set.member (label n) ops) && rate n > 0) availableNodes
+
+        oneOpenMovesFirst :: [((Label, Label), Int, Set.Set Label)]
+        oneOpenMovesFirst = map (\(G2N n1 n2 d o) -> ((label n1, label n2), (clock + 1 - 26) * (rate n1) + d, Set.insert (label n1) o)) closedAvailableNodesFirst
+
+        openMovesFirstWithStep :: [((Label, Label), Int, Set.Set Label)]
+        openMovesFirstWithStep = concat $ map (\((l1, l2), d, ops) -> [((l1, n), d, ops) | n <- Set.toList (neighbors (node2 (g Map.! (l1, l2))))]) oneOpenMovesFirst
+
+        oneOpenMovesSecond :: [((Label, Label), Int, Set.Set Label)]
+        oneOpenMovesSecond = map (\(G2N n1 n2 d o) -> ((label n1, label n2), (clock + 1 - 26) * (rate n2) + d, Set.insert (label n2) o)) closedAvailableNodesSecond
+
+        openMovesSecondWithStep :: [((Label, Label), Int, Set.Set Label)]
+        openMovesSecondWithStep = concat $ map (\((l1, l2), d, ops) -> [((n, l2), d, ops) | n <- Set.toList (neighbors (node1 (g Map.! (l1, l2))))]) oneOpenMovesSecond
+
+        openGsFirst :: [(GraphLevel2, Int, Set.Set Label)]
+        openGsFirst = map (\(lab, dist, ops) -> (Map.update (\(G2N n1 n2 d op) -> Just $ G2N n1 n2 dist ops) lab originalG, clock + 1, ops)) openMovesFirstWithStep
+
+        openGsSecond :: [(GraphLevel2, Int, Set.Set Label)]
+        openGsSecond = map (\(lab, dist, ops) -> (Map.update (\(G2N n1 n2 d op) -> Just $ G2N n1 n2 dist ops) lab originalG, clock + 1, ops)) openMovesSecondWithStep
+
+        closedAvailableNodesBoth :: [Graph2Node]
+        closedAvailableNodesBoth = filter (\(G2N n1 n2 _ ops) -> ((label n1) /= (label n2) && (not $ Set.member (label n1) ops) && (not $ Set.member (label n2) ops) && (rate n1) > 0 && (rate n2) > 0)) availableNodes
+
+        twoOpenMoves :: [((Label, Label), Int, Set.Set Label)]
+        twoOpenMoves =  map (\(G2N n1 n2 d o) -> ((label n1, label n2), (clock + 1 - 26) * ((rate n1) + (rate n2)) + d, Set.insert (label n2) (Set.insert (label n1) o))) closedAvailableNodesBoth
+
+        twoOpenGs :: [(GraphLevel2, Int, Set.Set Label)]
+        twoOpenGs = map (\(lab, dist, ops) -> (Map.update (\(G2N n1 n2 d op) -> Just $ G2N n1 n2 dist ops) lab originalG, clock + 1, ops)) twoOpenMoves
+
+
+runLevels2 :: GraphLevel2 -> [(GraphLevel2, Int, Set.Set Label)] -> Int -> Int -> [(GraphLevel2, Int, Set.Set Label)]
+runLevels2 originalG currentLevels n openableCount
+    | n > 26 = currentLevels
+    | otherwise = allOpenGraphs ++ runLevels2 originalG notAllOpenGraphs (n + 1) openableCount
+    where
+        nextLevels = concat $ map (nextLevel2 originalG) currentLevels
+
+        deduplicate :: Map.Map (Set.Set Label) (GraphLevel2, Int) -> [(GraphLevel2, Int, Set.Set Label)] -> [(GraphLevel2, Int, Set.Set Label)]
+        deduplicate m [] = map (\(ops, (g, c)) -> (g, c, ops)) $ Map.toList m
+        deduplicate m ((g, c, ops):xs) = deduplicate (Map.insertWith (\(g1, c1) (g2, c2) -> (mergeGraphs g1 g2, c1)) ops (g, c) m) xs
+
+        mergeGraphs :: GraphLevel2 -> GraphLevel2 -> GraphLevel2
+        mergeGraphs = Map.unionWith (\n1 n2 -> if distance n1 < distance n2 then n1 else n2)
+
+        dedupedGraphs :: [(GraphLevel2, Int, Set.Set Label)]
+        dedupedGraphs = deduplicate Map.empty nextLevels
+
+        splitGraphs :: [(GraphLevel2, Int, Set.Set Label)] -> ([(GraphLevel2, Int, Set.Set Label)], [(GraphLevel2, Int, Set.Set Label)])
+        splitGraphs [] = ([], [])
+        splitGraphs (g@(_, _, s):xs)
+            | Set.size s == openableCount = (g:openAlls, stillToOpen)
+            | otherwise = (openAlls, g:stillToOpen)
+            where
+                (openAlls, stillToOpen) = splitGraphs xs
+
+        (allOpenGraphs, notAllOpenGraphs) = splitGraphs dedupedGraphs
+
+
 solve2 :: [ParsedLine2] -> Int
-solve2 lines = undefined
+solve2 lines = (*(-1)) . minimum . map distance . concat . map (\(a,_,_) -> Map.elems a) $ runLevels2 gLevel [firstLevelInfo] 0 openableCount
+    where
+        openableCount = length $ filter ((>0) . rate) lines
+        gLevel = convertToGraphLevel2 (crossProduct lines lines) Map.empty
+        firstLevel = Map.update (\(G2N n1 n2 d o) -> Just $ G2N n1 n2 0 o) ("AA", "AA") $ gLevel
+        firstLevelInfo = (firstLevel, 0, Set.empty)
