@@ -6,4 +6,4 @@ cabal install --lib --package-env . PACKAGE
 Ubuntu:
 cabal install PACKAGE
 
-e.g.: cabal install pqueue
+e.g.: cabal install --lib pqueue
