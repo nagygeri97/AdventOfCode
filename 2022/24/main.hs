@@ -10,6 +10,7 @@ import Control.Monad.State
 import Control.Monad
 import Control.Applicative
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 data Field = Wall | B [Blizzard] deriving (Eq, Ord, Show)
 data Blizzard
@@ -93,31 +94,34 @@ possibleNextMoves nextG (x, y) = moves
         ((minx, miny), (maxx, maxy)) = bounds nextG
         moves = filter (\m -> nextG ! m == (B [])) . filter (\(a,b) -> a >= minx && a <= maxx && b >= miny && b <= maxy) $ [(x+1, y), (x-1, y), (x,y), (x, y+1), (x, y-1)]
 
-type Visited = Array (Int, Int) Bool
-type VisitedPerGraph = Map.Map Graph Visited
+type Visited = Array (Int, Int, Int) Bool
 
-checkVisited :: VisitedPerGraph -> Graph -> (Int, Int) -> Bool
-checkVisited vpg g p = Map.member g vpg && (vpg Map.! g) ! p
+checkVisited :: Visited -> Int -> (Int, Int) -> Bool
+checkVisited v g (x,y) = v ! (g, x, y)
 
-updateVisited :: Graph -> VisitedPerGraph -> (Int, Int) -> VisitedPerGraph
-updateVisited g vpg p
-    | Map.member g vpg = Map.update (\v -> Just $ v // [(p, False)]) g vpg
-    | otherwise = updateVisited g (Map.insert g (listArray (bounds g) [False | _ <- elems g]) vpg) p
-
-simulate :: Int -> (Int, Int) -> [((Int, Int), Int)] -> VisitedPerGraph -> Graph -> Int
-simulate m goal ((pos, n):poss) vpg g
-    | goal == pos = (n - 1)
-    | otherwise = simulate n goal (poss ++ movesWithN) newVpg nextG
+simulate :: Int -> Int -> (Int, Int) -> Set.Set (Int, Int) -> Visited -> Array Int Graph -> Int
+simulate n maxGIdx goal poss vpg gs
+    | Set.member goal poss = n
+    | otherwise = simulate (n + 1) maxGIdx goal newPoss newVpg gs
     where
-        nextG = if m == n then g else nextGraph g
-        moves = filter (not . checkVisited vpg g) $ possibleNextMoves nextG pos
-        movesWithN = [(move, n+1) | move <- moves]
-        newVpg = foldl (updateVisited nextG) vpg moves
+        posList = Set.toList poss
+        newPoss = Set.fromList . concat . map (possibleNextMoves nextG) . filter (not . checkVisited vpg gIdx) $ posList 
+
+        gIdx = n `mod` maxGIdx
+        nextGIdx = (n + 1) `mod` maxGIdx
+        nextG = gs ! nextGIdx
+
+        newVpg = vpg // [((gIdx, x, y), True) | (x,y) <- posList]
 
 indexOf :: Eq a => a -> [a] -> Int
 indexOf e (x:xs)
     | e == x = 0
     | otherwise = 1 + indexOf e xs
+
+allGraphs :: Graph -> Int -> Int -> [(Int, Graph)]
+allGraphs g i maxi
+    | i == maxi = [] 
+    | otherwise = (i, g) : allGraphs (nextGraph g) (i + 1) maxi
 
 convert :: String -> ParsedLine
 convert = map toField
@@ -126,11 +130,35 @@ convert2 :: String -> ParsedLine2
 convert2 = convert
 
 solve1 :: [ParsedLine] -> Int
-solve1 lines = simulate 0 goal [(start, 1)] Map.empty graph
+solve1 lines = simulate 0 maxGIdx goal (Set.singleton start) emptyVisited allgs
     where
-        goal = (length lines - 1, indexOf (B []) (last lines))
+        goal = (height - 1, indexOf (B []) (last lines))
         start = (0, indexOf (B []) (head lines))
         graph = toGraph lines
 
+        height = length lines
+        width = length (head lines)
+        maxGIdx = lcm (height - 2) (width - 2)
+
+        emptyVisited = listArray ((0,0,0), (maxGIdx - 1, height - 1, width - 1)) (repeat False)
+
+        allgs = array (0, maxGIdx - 1) $ allGraphs graph 0 maxGIdx
+
 solve2 :: [ParsedLine2] -> Int
-solve2 = undefined
+solve2 lines = goBackToEnd
+    where
+        goal = (height - 1, indexOf (B []) (last lines))
+        start = (0, indexOf (B []) (head lines))
+        graph = toGraph lines
+
+        height = length lines
+        width = length (head lines)
+        maxGIdx = lcm (height - 2) (width - 2)
+
+        emptyVisited = listArray ((0,0,0), (maxGIdx - 1, height - 1, width - 1)) (repeat False)
+
+        allgs = array (0, maxGIdx - 1) $ allGraphs graph 0 maxGIdx
+
+        goToEnd = simulate 0 maxGIdx goal (Set.singleton start) emptyVisited allgs
+        goBackToStart = simulate goToEnd maxGIdx start (Set.singleton goal) emptyVisited allgs
+        goBackToEnd = simulate goBackToStart maxGIdx goal (Set.singleton start) emptyVisited allgs
