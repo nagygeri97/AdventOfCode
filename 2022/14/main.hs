@@ -132,7 +132,7 @@ buildAndSimulate2 lines = do
 addAllSand2 :: State Board Board
 addAllSand2 = do
     settled <- propagateSand initialSandPos
-    initialCell <- gets (!initialSandPos)
+    initialCell <- gets (! initialSandPos)
     if settled && initialCell /= Sand
         then addAllSand2
         else get
