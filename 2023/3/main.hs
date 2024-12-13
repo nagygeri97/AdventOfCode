@@ -56,7 +56,7 @@ getNeighborsForLine (prev, curr, next) = zipWith fn (tail next ++ ".") . zipWith
     where fn e (c,l) = (c, e:l)
 
 solve2 :: [ParsedLine2] -> Int
-solve2 = undefined
+solve2 lines = undefined
     where
         emptyLine = map (const '.') (head lines)
         linesWithNeighbors = zip3 (emptyLine:init lines) lines (tail lines ++ [emptyLine])
