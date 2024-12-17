@@ -1,0 +1,31 @@
+0: bst A
+2: bxl 1
+4: cdv B
+6: bxl 5
+8: adv 3
+10: bxc -
+12: out B
+14: jnz 0
+
+
+0: B = A % 8;
+2: B = B ^ 1;
+4: C = A / (2 ^ B);
+6: B = B ^ 5;
+8: A = A / 2^3;
+10: B = B ^ C;
+12: print B % 8;
+14: if A != 0 goto 0;
+
+
+A = some value;
+B = 0;
+C = 0;
+do {
+    B = A % 8;
+    B ^= 1;
+    C = A / (2^B);
+    B ^= 5;
+    B ^= C;
+    A /= 8;
+} while (A != 0);
