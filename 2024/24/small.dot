@@ -1,0 +1,8 @@
+digraph {
+y02 -> z02 [label="  OR "]
+y01 -> z01 [label="  XOR "]
+y00 -> z00 [label="  AND "]
+x02 -> z02 [label="  OR "]
+x01 -> z01 [label="  XOR "]
+x00 -> z00 [label="  AND "]
+}
